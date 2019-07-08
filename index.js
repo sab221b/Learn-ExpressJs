@@ -17,5 +17,5 @@ app.get('/', (req, res) => {
     res.send('Hello Sab!')
 });
 
-app.use('/employee', employeeController);
+app.use('/api/v1/employees', employeeController);
 
