@@ -1,65 +1,72 @@
 const express = require('express');
-var router = express.Router();
 const mongoose = require('mongoose');
 const Employee = mongoose.model('Employee');
 
-router.get('/', (req, res) => {
-    Employee.find((err, success) => {
+exports.getEmployees = (req, res) => {
+    if (req.query) {
+        console.log(req.query);
+        var query = req.query;
+        Employee.find((query), (err, response) => {
+            if (!err) {
+                res.send(response);
+            } else {
+                res.send('error fetching records: ' + err);
+            }
+        });
+    } else {
+        Employee.find((err, response) => {
+            if (!err) {
+                res.send(response);
+            } else {
+                res.send('error fetching records: ' + err)
+            }
+        });
+    }
+};
+
+exports.getEmployeeById = (req, res) => {
+    Employee.findById(req.params.id, (err, response) => {
         if (!err) {
-            res.send(success);
-        } else {
-            res.send('error fetching records: ' + err)
-        }
-    });
-});
-
-router.post('/', (req, res) => {
-    createEmployee(req, res);
-});
-
-router.get('/:id', (req, res) => {
-    Employee.findById(req.params.id, (err, success) => {
-        if(!err) {
-            res.send(success);
+            res.send(response);
         } else {
             res.send('error fetching data: ' + err);
         }
     })
-})
+};
 
-router.put('/:id', (req, res) => {
-    Employee.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }, (err, success) => {
-        if(!err) {
-            res.send(success);
+exports.updateEmployee = (req, res) => {
+    Employee.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true }, (err, response) => {
+        if (!err) {
+            res.send(response);
         } else {
             res.send('error in updating record: ' + err);
         }
     });
-});
+};
 
-router.delete('/:id', (req, res) => {
-    Employee.findByIdAndDelete(req.params.id, (err, success) => {
-        if(!err) {
-            res.send({ status: 'ok'});
+exports.deleteEmployee = (req, res) => {
+    Employee.findByIdAndRemove(req.params.id, (err, response) => {
+        if (!err) {
+            if (response) {
+                res.send({ message: 'deleted employee' });
+            } else res.send({ message: 'Not Found' });
         } else {
-            res.send('error in deleting record: ' + err);
+            res.send({ message: 'error deleting record' })
         }
     })
-})
+};
 
-createEmployee = function (req, res) {
+exports.createEmployee = (req, res) => {
     var employee = new Employee();
     employee.firstname = req.body.firstname;
     employee.lastname = req.body.lastname;
     employee.email = req.body.email;
     employee.mobile = req.body.mobile;
-    employee.save((err, success) => {
+    employee.save((err, response) => {
         if (!err) {
-            res.send(success);
+            res.send(response);
         } else {
             res.send('error creating record: ' + err);
         }
     })
 }
-
-module.exports = router;
