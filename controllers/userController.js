@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
+const Profile = mongoose.model('Profile');
 const bcrypt = require('bcrypt');
 
 exports.getUsers = (req, res) => {
@@ -70,7 +71,10 @@ exports.createUser = (req, res) => {
             bcrypt.genSalt(10, (err, salt) => {
                 bcrypt.hash(user.password, salt, (err, hash) => {
                     if (!err && hash) {
+                        var profile = new Profile();
                         user.password = hash;
+                        user.profile = profile._id;
+                        console.log('profile', profile);
                         user.save((err, response) => {
                             if (!err) {
                                 res.send(response);
