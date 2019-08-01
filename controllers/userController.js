@@ -66,8 +66,7 @@ exports.createUser = (req, res) => {
     User.find({ email: user.email }, (err, success) => {
         if (success.length) {
             res.send({ message: "username already exists!" })
-        }
-        else if (!success.length && !err) {
+        } else if (!success.length && !err) {
             bcrypt.genSalt(10, (err, salt) => {
                 bcrypt.hash(user.password, salt, (err, hash) => {
                     if (!err && hash) {
