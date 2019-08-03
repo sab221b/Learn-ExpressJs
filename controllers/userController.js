@@ -28,8 +28,11 @@ exports.getUsers = (req, res) => {
 
 exports.getUserById = (req, res) => {
     User.findById(req.params.id, (err, response) => {
-        if (!err) {
-            res.send(response);
+        if (response) {
+            response.populate('profile').execPopulate((err, data) => {
+                if(data) res.send(data);
+                else res.send(err);
+            });
         } else {
             res.send('error fetching data: ' + err);
         }
@@ -59,34 +62,48 @@ exports.deleteUser = (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-    var user = new User();
-    user.username = req.body.username;
-    user.password = req.body.password;
-    user.email = req.body.email;
-    user.mobile = req.body.mobile;
-    User.find({ email: user.email }, (err, success) => {
-        if (success.length) {
-            res.send({ message: "username already exists!" })
-        } else if (!success.length && !err) {
-            bcrypt.genSalt(10, (err, salt) => {
-                bcrypt.hash(user.password, salt, (err, hash) => {
-                    if (!err && hash) {
-                        var profile = new Profile();
-                        user.password = hash;
-                        user.profile = profile._id;
-                        console.log('profile', profile);
-                        user.save((err, response) => {
-                            if (!err) {
-                                res.send(response);
-                            } else {
-                                res.send('error creating user: ' + err);
-                            }
-                        })
-                    } else {
-                        res.send(err);
-                    }
+    if (req.body.firstname && req.body.lastname && req.body.dob && req.body.email && req.body.mobile) {
+        var user = new User();
+        user.username = req.body.username;
+        user.password = req.body.password;
+        user.email = req.body.email;
+        user.mobile = req.body.mobile;
+        User.find({ email: user.email }, (err, success) => {
+            if (success.length) {
+                res.send({ message: "username already exists!" })
+            } else if (!success.length && !err && user.password) {
+                bcrypt.genSalt(10, (err, salt) => {
+                    bcrypt.hash(user.password, salt, (err, hash) => {
+                        if (!err && hash) {
+                            var profile = new Profile();
+                            profile.firstname = req.body.firstname;
+                            profile.lastname = req.body.lastname;
+                            profile.gender = req.body.gender;
+                            profile.dob = req.body.dob;
+                            profile.save((err, response) => {
+                                if (response) {
+                                    user.password = hash;
+                                    user.profile = profile._id;
+                                    user.save((err, response) => {
+                                        if (response) {
+                                            response.populate('profile').execPopulate((err, data) => {
+                                                if(data) res.send(data);
+                                                else res.send(err);
+                                            })
+                                        } else {
+                                            res.send('error creating user: ' + err);
+                                        }
+                                    });
+                                } else {
+                                    res.send('error creating profile: ' + err);
+                                }
+                            });
+                        } else {
+                            res.send(err);
+                        }
+                    });
                 });
-            });
-        }
-    })
+            }
+        })
+    }
 }
