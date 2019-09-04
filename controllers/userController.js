@@ -1,9 +1,8 @@
-const express = require('express');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Profile = mongoose.model('Profile');
 const bcrypt = require('bcrypt');
-const LocalStrategy = require('passport-local');
+const jwt = require('jsonwebtoken');
 
 exports.login = (req, res) => {
     const userName = req.body.username;
@@ -19,7 +18,14 @@ exports.login = (req, res) => {
                     if (err) {
                         res.send(err)
                     } if (isMatch) {
-                        res.send(user);
+                        // res.send(user);
+                        jwt.sign({ userID: user._id, email: user.email }, 'secretKey', { expiresIn: '1h' }, (err, token) => {
+                            if (err)
+                                res.send(err);
+                            else if (token) {
+                                res.send({ message: 'Authentication Success', access_token: token })
+                            }
+                        })
                     } else {
                         res.send({ message: 'password is incorrect' });
                     }
