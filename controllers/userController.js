@@ -1,8 +1,41 @@
-const express = require('express');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Profile = mongoose.model('Profile');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+exports.login = (req, res) => {
+    const userName = req.body.username;
+    const password = req.body.password;
+    if (req.body.username && req.body.password) {
+        User.findOne({ email: userName }, (err, user) => {
+            if (err) {
+                res.send(err);
+            } if (!user) {
+                res.send({ message: 'username is not registered' })
+            } if (user) {
+                bcrypt.compare(password, user.password, (err, isMatch) => {
+                    if (err) {
+                        res.send(err)
+                    } if (isMatch) {
+                        // res.send(user);
+                        jwt.sign({ userID: user._id, email: user.email }, 'secretKey', { expiresIn: '1h' }, (err, token) => {
+                            if (err)
+                                res.send(err);
+                            else if (token) {
+                                res.send({ message: 'Authentication Success', access_token: token })
+                            }
+                        })
+                    } else {
+                        res.send({ message: 'password is incorrect' });
+                    }
+                })
+            }
+        })
+    } else {
+        res.send({ message: 'username and password is required' })
+    }
+};
 
 exports.getUsers = (req, res) => {
     if (req.query) {
@@ -30,7 +63,7 @@ exports.getUserById = (req, res) => {
     User.findById(req.params.id, (err, response) => {
         if (response) {
             response.populate('profile').execPopulate((err, data) => {
-                if(data) res.send(data);
+                if (data) res.send(data);
                 else res.send(err);
             });
         } else {
@@ -64,13 +97,12 @@ exports.deleteUser = (req, res) => {
 exports.createUser = (req, res) => {
     if (req.body.firstname && req.body.lastname && req.body.dob && req.body.email && req.body.mobile) {
         var user = new User();
-        user.username = req.body.username;
-        user.password = req.body.password;
         user.email = req.body.email;
+        user.password = req.body.password;
         user.mobile = req.body.mobile;
         User.find({ email: user.email }, (err, success) => {
             if (success.length) {
-                res.send({ message: "username already exists!" })
+                res.send({ message: "email already exists!" })
             } else if (!success.length && !err && user.password) {
                 bcrypt.genSalt(10, (err, salt) => {
                     bcrypt.hash(user.password, salt, (err, hash) => {
@@ -87,7 +119,7 @@ exports.createUser = (req, res) => {
                                     user.save((err, response) => {
                                         if (response) {
                                             response.populate('profile').execPopulate((err, data) => {
-                                                if(data) res.send(data);
+                                                if (data) res.send(data);
                                                 else res.send(err);
                                             })
                                         } else {
