@@ -5,14 +5,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 exports.login = (req, res) => {
-    const userName = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
-    if (req.body.username && req.body.password) {
-        User.findOne({ email: userName }, (err, user) => {
+    if (req.body.email && req.body.password) {
+        User.findOne({ email }, (err, user) => {
             if (err) {
                 res.send(err);
             } if (!user) {
-                res.send({ message: 'username is not registered' })
+                res.send({ message: 'email is not registered' })
             } if (user) {
                 bcrypt.compare(password, user.password, (err, isMatch) => {
                     if (err) {
